@@ -1,13 +1,23 @@
 """
 script grr_automator.py
-author: baz
+author: rs
 This code automates grr forensic analysis
 """
 from grr_api_client import api
 from grr_api_client import hunt
 import sys
+import socket
 
+def get_ip_address():
+    """
+    Returns IP address of the machine
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip_address = s.getsockname()[0]
+    s.close()
 
+    return ip_address
 
 class GrrAutomator():
 
@@ -17,6 +27,8 @@ class GrrAutomator():
     grr_api = None
     current_clients = []
 
+    default_admin_port = "8000"
+
 
     default_client_rate = 2
     default_client_limit = 1
@@ -24,18 +36,22 @@ class GrrAutomator():
 
     def __init__(self, server_link=None,user=None,password=None):
         """
-
+        gets default ip address
         """
+        if server_link is None:
+            server_link = "http://{}:{}".format(get_ip_address(), self.default_admin_port)
+
+        print(server_link)
         if server_link is None or user is None or password is None:
             raise ValueError("server_link, user and password needs to be provided")
 
         self.server_address = server_link
-        self.server_user = server_link
-        self.server_password = server_link
+        self.server_user = user
+        self.server_password = password
 
 
         self.grr_api = api.InitHttp(api_endpoint=self.server_address,
-                              auth=(self.server_user, self.server_password)
+                              auth=(self.server_user, self.server_password))
 
 
 
@@ -52,17 +68,28 @@ class GrrAutomator():
 
         result = {}
         for client in search_result:
-            # print(client.__dict__)
-            client_id = client.client_id
-            self.current_clients.append(client_id)
-            client_last_seen_at = client.data.last_seen_at
-            result[client_id] = client_last_seen_at
 
+            client_os = str(client.data.os_info.system)
+            client_os_release = str(client.data.os_info.release)
+            client_id = str(client.client_id)
+            client_last_seen_at = str(client.data.last_seen_at)
+
+            self.current_clients.append(client_id)
+
+
+            client_details = [client_os, client_os_release, client_id]
+            result[client_id] = client_details
+
+
+
+        return result
 
     def get_all_clients(self):
         """
         Return all clients
         """
+        if self.current_clients == None:
+            self.find_client()
         return self.current_clients
 
 
@@ -120,7 +147,7 @@ class GrrAutomator():
 
         flow_args = grrapi.types.CreateFlowArgs(flow_name)
 
-        if flow_name = "ArtifactCollectorFlow":
+        if flow_name == "ArtifactCollectorFlow":
 
             if len(artifact_list) == 0:
                 raise ValueError("No artifacts provided")
@@ -128,12 +155,14 @@ class GrrAutomator():
             for art in artifact_list:
                 flow_args.artifact_list.append(art)
 
-:
-
-
         hunt = grrapi.CreateHunt(flow_name=flow_name, flow_args=flow_args,
                                  hunt_runner_args=hunt_runner_args)
         hunt = hunt.Start()
 
         # get reference id
         return hunt
+
+
+if __name__ == "__main__":
+    grr = GrrAutomator(user="gray",password="gray")
+    print(grr.find_client())
