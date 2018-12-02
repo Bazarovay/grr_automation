@@ -1,4 +1,4 @@
-# grr_automation
+# Google Rapid Response Automation
 Automate GRR forensic analysis
 
 
