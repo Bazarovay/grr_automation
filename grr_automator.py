@@ -136,7 +136,7 @@ class GrrAutomator():
         if expiry_time is not None:
             self.expiry_time = expiry_time
 
-        hunt_runner_args = grrapi.types.CreateHuntRunnerArgs()
+        hunt_runner_args = self.grr_api.types.CreateHuntRunnerArgs()
 
         hunt_runner_args.client_rate = self.default_client_rate
         hunt_runner_args.client_limit = self.default_client_limit
@@ -145,7 +145,7 @@ class GrrAutomator():
         rule = hunt_runner_args.client_rule_set.rules.add()
 
 
-        flow_args = grrapi.types.CreateFlowArgs(flow_name)
+        flow_args = self.grr_api.types.CreateFlowArgs(flow_name)
 
         if flow_name == "ArtifactCollectorFlow":
 
@@ -155,7 +155,7 @@ class GrrAutomator():
             for art in artifact_list:
                 flow_args.artifact_list.append(art)
 
-        hunt = grrapi.CreateHunt(flow_name=flow_name, flow_args=flow_args,
+        hunt = self.grr_api.CreateHunt(flow_name=flow_name, flow_args=flow_args,
                                  hunt_runner_args=hunt_runner_args)
         hunt = hunt.Start()
 
@@ -166,3 +166,4 @@ class GrrAutomator():
 if __name__ == "__main__":
     grr = GrrAutomator(user="gray",password="gray")
     print(grr.find_client())
+    grr.create_hunt()
