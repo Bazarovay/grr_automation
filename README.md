@@ -4,6 +4,9 @@ Automate GRR forensic analysis
 
 This script automates forensic analysis of multiple machines using GRR API.
 
+- Need to clone grr_api_client folder in the directory for this to work
+
+https://github.com/google/grr/tree/master/api_client/python
 
 ### To get started:
 - Set up a GRR server.
@@ -46,7 +49,3 @@ sudo systemctl start grr
 _Start the virtual environment_
 
 source ~/GRR_NEW/bin/activate
-
-
-
-
