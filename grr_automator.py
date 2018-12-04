@@ -6,6 +6,8 @@ This code automates grr forensic analysis
 from grr_api_client import api
 from grr_api_client import hunt
 import sys
+import sys
+import time
 import socket
 
 def get_ip_address():
@@ -83,6 +85,81 @@ class GrrAutomator():
 
 
         return result
+    
+    
+
+    def wait_timer(n):
+        time_counter = 0
+        while True:
+            time_counter += 1
+            if time_counter <= n:
+                time.sleep(1)
+                sys.stdout.write("*")
+                sys.stdout.flush()
+            else:
+                break
+        sys.stdout.write("\n")
+
+
+
+    def get_user_data(obj):
+
+        # result_list = []
+
+        required_labels = {"username":None,
+                        "last_logon":None,
+                        "full_name":None
+                        # "os":None,
+                        # "os_major_version":None
+                        }
+
+        result = {}
+        for descriptor in obj.DESCRIPTOR.fields:
+            value = getattr(obj, descriptor.name)
+            if descriptor.type == descriptor.TYPE_MESSAGE:
+                if descriptor.label == descriptor.LABEL_REPEATED:
+                    new_result = map(get_user_data, value)
+                    if len(new_result) > 0:
+                        return new_result
+                else:
+                    new_result = get_user_data(value)
+
+
+            elif descriptor.type == descriptor.TYPE_ENUM:
+
+                enum_name = descriptor.enum_type.values[value].name
+                if descriptor.name in required_labels:
+                    result[str(descriptor.name)] = str(enum_name)
+
+            else:
+                # print "%s: %s" % (descriptor.name, value)
+                if descriptor.name in required_labels:
+
+                    result[str(descriptor.name)] = str(value)
+
+            # if result:
+            #     result_list.append(result)
+
+
+            # print(result_list)
+            #
+
+
+        # print(result)
+        return result
+
+    def get_readable_time(tstamp):
+        """
+        Converts to date readable
+        """
+
+        if tstamp != "0":
+            tstamp = datetime.utcfromtimestamp(int(str(tstamp)[:-6])).strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            tstamp = "Not available"
+
+        return tstamp
+
 
     def get_all_clients(self):
         """
